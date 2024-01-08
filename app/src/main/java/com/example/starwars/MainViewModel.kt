@@ -36,4 +36,10 @@ class MainViewModel : ViewModel() {
             }
         }
     }
+
+    val filterQuery = MutableLiveData("")
+
+    fun updateFilterQuery(text: String){
+        filterQuery.postValue(text)
+    }
 }

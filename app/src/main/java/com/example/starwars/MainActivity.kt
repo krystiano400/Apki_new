@@ -15,6 +15,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -34,6 +38,7 @@ import com.example.starwars.R
 import com.example.starwars.details.DetailsActivity
 import com.example.starwars.ui.theme.StarWarsTheme
 import kotlin.random.Random
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
@@ -44,11 +49,28 @@ class MainActivity : ComponentActivity() {
             StarWarsTheme {
 
 
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    PeopleList(viewModel, onClick={id -> navigateToDetails(id)})
+                Scaffold(
+                    topBar = {
+
+                               MyTopView(viewModel = viewModel)
+                            },
+
+//                    content = {
+//                        PeopleList(viewModel, onClick = { id -> navigateToDetails(id) })
+//                    },
+                    floatingActionButton = {
+                        FloatingActionButton(onClick = { }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add")
+                        }
+                    }
+                ){innerPadding->
+                    Column (
+                        modifier = Modifier
+                            .padding(innerPadding),
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
+                    ){
+                        PeopleList(viewModel, onClick = { id -> navigateToDetails(id)})
+                    }
 
                 }
             }
@@ -63,7 +85,36 @@ class MainActivity : ComponentActivity() {
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyTopView(viewModel: MainViewModel) {
+    var searchText by remember { mutableStateOf("") }
 
+    SearchBar(
+        modifier = Modifier.fillMaxWidth(),
+        query = searchText,
+        onQueryChange = { wpisywanyTekst -> searchText = wpisywanyTekst },
+        onSearch = { viewModel.updateFilterQuery(it) },
+        placeholder = { Text(text = "Wyszukaj...") },
+        active = false,
+        onActiveChange = { },
+        leadingIcon = {
+            Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+        },
+        trailingIcon = {
+            Image(
+                modifier = Modifier.clickable {
+                    searchText = ""
+                    viewModel.updateFilterQuery("")
+                },
+                imageVector = Icons.Default.Clear,
+                contentDescription = "Clear"
+            )
+        }
+    ) {
+
+    }
+}
 
 @Composable
 fun CharacterInfoTile(name: String , gender:String, birth_year:String, onClick:()-> Unit) {
@@ -79,7 +130,7 @@ fun CharacterInfoTile(name: String , gender:String, birth_year:String, onClick:(
 
     Column(
         modifier = Modifier
-            .clickable {onClick()}
+            .clickable { onClick() }
             .fillMaxSize()
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -128,6 +179,9 @@ fun CharacterInfoTile(name: String , gender:String, birth_year:String, onClick:(
 
 @Composable
 fun PeopleList(viewModel: MainViewModel, onClick: (String) ->Unit) {
+    val query by viewModel.filterQuery.observeAsState("")
+
+
     //val people by viewModel.immutablePeopleData.observeAsState(emptyList())
     val uiState by viewModel.immutablePeopleData.observeAsState()
 
@@ -145,13 +199,13 @@ fun PeopleList(viewModel: MainViewModel, onClick: (String) ->Unit) {
             Toast.makeText(LocalContext.current, "${uiState!!.error}", Toast.LENGTH_SHORT).show()
         }
         else -> {
-            uiState?.data?.let { peopleList ->
-
+            uiState?.data?.let { restpeopleList ->
+                restpeopleList.filter { it.name.contains(query, true) }.let { peopleList ->
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(uiState?.data!!) { index, people ->
+                    itemsIndexed(peopleList) { index, people ->
                         CharacterInfoTile(
                             name = people.name,
                             gender = people.gender,
@@ -163,4 +217,4 @@ fun PeopleList(viewModel: MainViewModel, onClick: (String) ->Unit) {
 
             }
         }
-    }}
+    }}}
